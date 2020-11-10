@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import time
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,6 +81,35 @@ DATABASES = {
         'PORT': '3306',
     }
 }
+# redis配置
+CACHES = {
+    'default': {  # 默认
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # "CONNECTION_POOL_KWARGS": {"max_connections": 100},
+            # # "PASSWORD": "密码",
+            # "DECODE_RESPONSES": True
+        }
+    },
+    'session': {  # session
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+}
+
+# 配置session存储3种方式
+# 存储在数据库中，如下设置可写可不写，是默认存储模式
+# SESSION_ENGINE = "django.contrib.sessions.backends.db"
+# 存储在缓存中，存储在本机内存中，如果丢失则不能找回，比数据库的方式读写更快
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+# 混合存储：优先从本机内存中存取，如果没有则冲数据库中存取
+# SESSION_ENGINE = "django.contrib.sessions.backends.cache_db"
+SESSION_CACHE_ALIAS = "session"
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
@@ -116,3 +146,88 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# 日志配置
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,  # 是否禁用已经存在的日志器
+    'formatters': {
+        # 日志格式
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
+        },
+        'simple': {  # 简单格式
+            'format': '%(levelname)s %(module)s %(lineno)d %(message)s'
+        },
+    },
+    # 日志过滤
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        }
+    },
+    # 定义具体处理日志的方式
+    'handlers': {
+        # # 默认记录所有日志
+        # 'default': {
+        #     'level': 'INFO',
+        #     'class': 'logging.handlers.RotatingFileHandler',
+        #     'filename': os.path.join(log_path, 'all-{}.log'.format(time.strftime('%Y-%m-%d'))),
+        #     'maxBytes': 1024 * 1024 * 5,  # 文件大小
+        #     'backupCount': 5,  # 备份数
+        #     'formatter': 'standard',  # 输出格式
+        #     'encoding': 'utf-8',  # 设置默认编码，否则打印出来汉字乱码
+        # },
+        # # 输出错误日志
+        # 'error': {
+        #     'level': 'ERROR',
+        #     'class': 'logging.handlers.RotatingFileHandler',
+        #     'filename': os.path.join(log_path, 'error-{}.log'.format(time.strftime('%Y-%m-%d'))),
+        #     'maxBytes': 1024 * 1024 * 5,  # 文件大小
+        #     'backupCount': 5,  # 备份数
+        #     'formatter': 'standard',  # 输出格式
+        #     'encoding': 'utf-8',  # 设置默认编码
+        # },
+        # 控制台输出
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/blog.log'.format(time.strftime('%Y-%m-%d'))),
+            'maxBytes': 1024 * 1024 * 5,  # 文件大小
+            'backupCount': 10,  # 备份数
+            'formatter': 'verbose',  # 输出格式
+            'encoding': 'utf-8',  # 设置默认编码
+        },
+        # # 输出info日志
+        # 'info': {
+        #     'level': 'INFO',
+        #     'class': 'logging.handlers.RotatingFileHandler',
+        #     'filename': os.path.join(log_path, 'info-{}.log'.format(time.strftime('%Y-%m-%d'))),
+        #     'maxBytes': 1024 * 1024 * 5,
+        #     'backupCount': 5,
+        #     'formatter': 'standard',
+        #     'encoding': 'utf-8',  # 设置默认编码
+        # },
+        # },
+    },
+    # # 配置用哪几种 handlers 来处理日志
+    'loggers': {
+        # 类型 为 django 处理所有类型的日志， 默认调用
+        'django': {
+            'handlers': ['console', 'file'],  # 同时向终端和文件中输出
+            'level': 'INFO',
+            'propagate': False
+        },
+        # log 调用时需要当作参数传入
+        # 'log': {
+        #     'handlers': ['error', 'info', 'console', 'default'],
+        #     'level': 'INFO',
+        #     'propagate': True  # 是否继续传递日志信息
+        # },
+    }
+}
